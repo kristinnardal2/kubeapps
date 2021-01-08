@@ -1,9 +1,9 @@
 import * as url from "shared/url";
 import { Auth } from "./Auth";
 import { axiosWithAuth } from "./AxiosInstance";
-import { ResourceKindsWithAPIVersions } from "./ResourceAPIVersion";
-import { isNamespaced, ResourceKind, ResourceKindsWithPlurals } from "./ResourceKinds";
-import { IK8sList, IResource } from "./types";
+// import { ResourceKindsWithAPIVersions } from "./ResourceAPIVersion";
+// import { isNamespaced, ResourceKind, ResourceKindsWithPlurals } from "./ResourceKinds";
+import { IK8sList, IKubeState, IResource } from "./types";
 
 export const APIBase = (cluster: string) => `api/clusters/${cluster}`;
 export let WebSocketAPIBase: string;
@@ -21,6 +21,7 @@ export class Kube {
     cluster: string,
     apiVersion: string,
     resource: string,
+    namespaced: boolean,
     namespace?: string,
     name?: string,
     query?: string,
@@ -28,7 +29,7 @@ export class Kube {
     let u = `${url.api.k8s.base(cluster)}/${
       apiVersion === "v1" || !apiVersion ? "api/v1" : `apis/${apiVersion}`
     }`;
-    if (namespace && isNamespaced(resource)) {
+    if (namespaced) {
       u += `/namespaces/${namespace}`;
     }
     u += `/${resource}`;
@@ -45,11 +46,12 @@ export class Kube {
     cluster: string,
     apiVersion: string,
     resource: string,
+    namespaced: boolean,
     namespace?: string,
     name?: string,
     query?: string,
   ) {
-    let u = this.getResourceURL(cluster, apiVersion, resource, namespace);
+    let u = this.getResourceURL(cluster, apiVersion, resource, namespaced, namespace);
     u = `${WebSocketAPIBase}${u}?watch=true`;
     if (name) {
       u += `&fieldSelector=metadata.name%3D${name}`;
@@ -64,12 +66,13 @@ export class Kube {
     cluster: string,
     apiVersion: string,
     resource: string,
+    namespaced: boolean,
     namespace?: string,
     name?: string,
     query?: string,
   ) {
     const { data } = await axiosWithAuth.get<IResource | IK8sList<IResource, {}>>(
-      this.getResourceURL(cluster, apiVersion, resource, namespace, name, query),
+      this.getResourceURL(cluster, apiVersion, resource, namespaced, namespace, name, query),
     );
     return data;
   }
@@ -82,24 +85,54 @@ export class Kube {
     cluster: string,
     apiVersion: string,
     resource: string,
+    namespaced: boolean,
     namespace?: string,
     name?: string,
     query?: string,
   ) {
     return new WebSocket(
-      this.watchResourceURL(cluster, apiVersion, resource, namespace, name, query),
+      this.watchResourceURL(cluster, apiVersion, resource, namespaced, namespace, name, query),
       Auth.wsProtocols(),
     );
   }
 
-  // Gets the plural form of the resource Kind for use in the resource path
-  public static resourcePlural(kind: ResourceKind) {
-    return ResourceKindsWithPlurals[kind];
+  public static async getAPIGroups(cluster: string) {
+    const { data: apiGroups } = await axiosWithAuth.get(`${url.api.k8s.base(cluster)}/apis`);
+    return apiGroups.groups;
   }
 
-  // Gets the apiVersion of the resource Kind for use in the resource path
-  public static resourceAPIVersion(kind: ResourceKind) {
-    return ResourceKindsWithAPIVersions[kind];
+  public static async getResourceKinds(cluster: string, groups: any[]) {
+    const result: IKubeState["kinds"] = {};
+    const addResource = (r: any, version: string) => {
+      // Exclude subresources
+      if (!r.name.includes("/")) {
+        result[r.kind] = {
+          apiVersion: version,
+          plural: r.name,
+          namespaced: r.namespaced,
+        };
+      }
+    };
+    // Handle v1 separately
+    const { data: coreResourceList } = await axiosWithAuth.get(
+      `${url.api.k8s.base(cluster)}/api/v1`,
+    );
+    if (coreResourceList.resources) {
+      coreResourceList.resources.forEach((r: any) => addResource(r, "v1"));
+    }
+
+    await Promise.all(
+      groups.map(async (g: any) => {
+        const groupVersion = g.preferredVersion.groupVersion;
+        const { data: resourceList } = await axiosWithAuth.get(
+          `${url.api.k8s.base(cluster)}/apis/${groupVersion}`,
+        );
+        if (resourceList.resources) {
+          resourceList.resources.forEach((r: any) => addResource(r, groupVersion));
+        }
+      }),
+    );
+    return result;
   }
 
   public static async canI(

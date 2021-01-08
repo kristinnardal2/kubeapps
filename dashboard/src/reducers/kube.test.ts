@@ -2,11 +2,11 @@ import { getType } from "typesafe-actions";
 import actions from "../actions";
 import ResourceRef from "../shared/ResourceRef";
 import { IKubeState, IResource } from "../shared/types";
-import kubeReducer from "./kube";
+import kubeReducer, { initialKinds } from "./kube";
 
 const clusterName = "cluster-name";
 
-describe("authReducer", () => {
+describe("kubeReducer", () => {
   let initialState: IKubeState;
 
   const actionTypes = {
@@ -16,6 +16,7 @@ describe("authReducer", () => {
     openWatchResource: getType(actions.kube.openWatchResource),
     closeWatchResource: getType(actions.kube.closeWatchResource),
     receiveResourceFromList: getType(actions.kube.receiveResourceFromList),
+    receiveResourceKinds: getType(actions.kube.receiveResourceKinds),
   };
 
   const ref = new ResourceRef(
@@ -28,12 +29,15 @@ describe("authReducer", () => {
       },
     } as IResource,
     clusterName,
+    "services",
+    true,
   );
 
   beforeEach(() => {
     initialState = {
       items: {},
       sockets: {},
+      kinds: initialKinds,
     };
   });
 
@@ -205,6 +209,26 @@ describe("authReducer", () => {
       expect(newState).toEqual(state);
       // check that dontdeleteme is not modified
       expect(newState.sockets.dontdeleteme).toBe(state.sockets.dontdeleteme);
+    });
+
+    describe("receiveResourceKinds", () => {
+      it("retrieve new kinds", () => {
+        const kinds = {
+          Deployment: {
+            apiVersion: "apps/v1",
+            plural: "deployments",
+            namespaced: true,
+          },
+        };
+        const newState = kubeReducer(undefined, {
+          type: actionTypes.receiveResourceKinds,
+          payload: kinds,
+        });
+        expect(newState).toEqual({
+          ...initialState,
+          kinds,
+        });
+      });
     });
   });
 });

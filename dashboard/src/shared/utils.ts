@@ -23,7 +23,7 @@ export function getValueFromEvent(
 }
 
 export async function wait(ms: number = 1) {
-  await new Promise(resolve => setTimeout(() => resolve(), ms));
+  await new Promise(resolve => setTimeout(() => resolve(null), ms));
 }
 
 // 3 lines description max

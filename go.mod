@@ -18,12 +18,8 @@ require (
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/docker/go-metrics v0.0.0-20181218153428-b84716841b82 // indirect
 	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
-	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
-	github.com/emicklei/go-restful v2.11.1+incompatible // indirect
 	github.com/garyburd/redigo v1.6.0 // indirect
 	github.com/ghodss/yaml v1.0.0
-	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8 // indirect
-	github.com/go-openapi/spec v0.19.4 // indirect
 	github.com/gofrs/uuid v3.2.0+incompatible // indirect
 	github.com/golang/protobuf v1.5.1
 	github.com/google/go-cmp v0.5.5
@@ -51,17 +47,17 @@ require (
 	github.com/yvasiyarov/go-metrics v0.0.0-20150112132944-c25f46c4b940 // indirect
 	github.com/yvasiyarov/gorelic v0.0.6 // indirect
 	golang.org/x/image v0.0.0-20201208152932-35266b937fa6 // indirect
-	golang.org/x/net v0.0.0-20201224014010-6772e930b67b
+	golang.org/x/net v0.0.0-20210224082022-3d97a244fca7
 	golang.org/x/text v0.3.5 // indirect
 	google.golang.org/grpc v1.36.0
 	gopkg.in/DATA-DOG/go-sqlmock.v1 v1.3.0 // indirect
 	gopkg.in/square/go-jose.v1 v1.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	helm.sh/helm/v3 v3.5.0
-	k8s.io/api v0.20.4
-	k8s.io/apimachinery v0.20.4
-	k8s.io/cli-runtime v0.20.4
-	k8s.io/client-go v0.20.4
+	k8s.io/api v0.21.1
+	k8s.io/apimachinery v0.21.1
+	k8s.io/cli-runtime v0.21.1
+	k8s.io/client-go v0.21.1
 	k8s.io/helm v2.17.0+incompatible
 	k8s.io/klog v1.0.0 // indirect
 	k8s.io/kubernetes v1.13.0
